@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const userC = require("../controllers/Admin-controller.js");
+const userC = require("../controllers/admin-controller.js");
 const Class = require("../controllers/classes-controller.js");
 const {
   registerValiations: registerValidations,
   loginValiations: loginValidations,
-} = require("../controllers/Admin-controller.js");
+} = require("../controllers/admin-controller.js");
 const Course = require("../controllers/courses-controller.js");
 const Submission = require("../controllers/submissions-controller.js");
 
