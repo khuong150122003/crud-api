@@ -1,18 +1,24 @@
 const Class = require("../models/Classes");
 const User = require("../models/Admin.js");
 const createClass = async (req, res) => {
-  const { className } = req.body;
-
-  const newClass = new Class({
-    className,
-  });
+  const { className, codeClass } = req.body;
 
   try {
+    // Create a new class document
+    const newClass = new Class({
+      className,
+      codeClass,
+    });
+
+    // Save the new class document to the database
     await newClass.save();
-    res.status(201).json({
-      _id: newClass.id,
-      class: newClass,
+
+    // Send a success response
+    return res.status(201).json({
+      success: true,
       message: "Class created successfully",
+      class: newClass,
+      codeClass: codeClass,
     });
   } catch (err) {
     res.status(500).json({ message: err });
