@@ -22,6 +22,8 @@ const getAllUser = async (req, res, nxt) => {
 
 const registerValiations = [
   body("name").not().isEmpty().trim().withMessage("Name is required"),
+  body("firstName").not().isEmpty().trim().withMessage("firstName is required"),
+  body("lastName").not().isEmpty().trim().withMessage("lastName is required"),
   body("email").not().isEmpty().trim().withMessage("Email is required"),
   body("password")
     .isLength({ min: 6 })
@@ -30,7 +32,7 @@ const registerValiations = [
 
 // router.post("/signup", userC.signup);
 const signup = async (req, res, nxt) => {
-  const { name, email, password } = req.body;
+  const { name, firstName, lastName, email, password, role } = req.body;
 
   const errors = validationResult(req);
 
@@ -44,28 +46,21 @@ const signup = async (req, res, nxt) => {
   } catch (err) {
     console.log(err);
   }
-
   if (existingUser) {
     return res
       .status(422)
       .json({ errors: [{ msg: "Email is already taken" }] });
   }
-
-  let role = "student"; // Default role
-  const adminCount = await User.countDocuments({ role: "admin" });
-  if (adminCount === 0) {
-    role = "admin"; // First user will be admin
-  }
-
   let hashedPassword;
   try {
     hashedPassword = await bcrypt.hash(password, 12);
   } catch (err) {
     console.log(err);
   }
-
   const newUser = new User({
     name,
+    firstName,
+    lastName,
     email,
     password: hashedPassword,
     role,
@@ -77,7 +72,6 @@ const signup = async (req, res, nxt) => {
     console.log(err);
     return res.status(500).json({ errors: err });
   }
-
   return res.status(201).json({
     _id: newUser.id,
     user: newUser,
@@ -115,6 +109,7 @@ const login = async (req, res, nxt) => {
           .json({ errors: [{ msg: "Password is not correct" }] });
       }
     } else {
+      // User not found
       return res.status(404).json({ errors: [{ msg: "User not found" }] });
     }
   } catch (err) {
@@ -129,16 +124,20 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, "profile-" + Date.now() + path.extname(file.originalname)); // Set the filename
   },
+  destination: "./public/uploads/", // Set the destination folder for uploaded files
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname); // Set the filename
+  },
 });
 
 // Init multer upload
-const upload = multer({
+const uploadProfileImage = multer({
   storage: storage,
-}).single("profileImage"); // Specify the field name in the form
+}).single("profileImage");
 
 const updateUser = async (req, res) => {
   // Upload image
-  upload(req, res, async (err) => {
+  uploadProfileImage(req, res, async (err) => {
     if (err) {
       console.error("Error uploading image:", err);
       return res
@@ -147,19 +146,33 @@ const updateUser = async (req, res) => {
     }
 
     try {
+      let updatedUserData = {
+        name: req.body.name,
+        email: req.body.email,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        // Update profile image path if image was uploaded
+        profileImage: req.file ? req.file.filename : undefined, // Use only filename
+      };
+
+      // Check if password is provided
+      if (req.body.password) {
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(req.body.password, 12);
+        updatedUserData.password = hashedPassword;
+      }
+
+      // Update the user
       const updatedUser = await User.updateOne(
         { _id: req.params.id },
-        {
-          $set: {
-            name: req.body.name,
-            email: req.body.email,
-            password: req.body.password,
-            // Update profile image path if image was uploaded
-            profileImage: req.file ? req.file.path : undefined,
-          },
-        }
+        { $set: updatedUserData }
       );
-      res.status(201).json(updatedUser);
+
+      res.status(201).json({
+        success: true,
+        message: "User profile updated successfully",
+        user: updatedUser,
+      });
     } catch (err) {
       res.status(500).json({ message: err });
     }
@@ -176,12 +189,13 @@ const deleteUser = async (req, res) => {
 };
 
 const createClass = async (req, res) => {
-  const { className } = req.body;
+  const { className, codeClass } = req.body;
 
   try {
     // Create a new class document
     const newClass = new Class({
       className,
+      codeClass,
     });
 
     // Save the new class document to the database
@@ -192,6 +206,7 @@ const createClass = async (req, res) => {
       success: true,
       message: "Class created successfully",
       class: newClass,
+      codeClass: codeClass,
     });
   } catch (error) {
     // Send an error response if something goes wrong
@@ -281,22 +296,24 @@ const createAssignment = async (req, res) => {
   // Implementation to create assignment in course
 };
 
-const createSubmission = async (req, res) => {
-  // Extract submission details from the request body
-  const {
-    student_id,
-    class_name,
-    class_code,
-    course_name,
-    assignment_id,
-    submission_date,
-    grade,
-    comment,
-  } = req.body;
+const uploadSubmission = multer({
+  storage: storage,
+}).single("submissionFile");
 
-  try {
-    // Create the submission document
-    const newSubmission = new Submission({
+const createSubmission = async (req, res) => {
+  // Upload submission file
+  uploadSubmission(req, res, async (err) => {
+    if (err) {
+      console.error("Error uploading submission file:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload submission file",
+        error: err.message,
+      });
+    }
+
+    // Extract submission details from the request body
+    const {
       student_id,
       class_name,
       class_code,
@@ -305,27 +322,44 @@ const createSubmission = async (req, res) => {
       submission_date,
       grade,
       comment,
-    });
+    } = req.body;
 
-    // Save the submission document to the database
-    await newSubmission.save();
+    // Get the file path of the uploaded submission file
+    const submission_file = req.file ? req.file.path : null;
 
-    // Send a success response
-    res.status(201).json({
-      _id: newUser.id,
-      success: true,
-      message: "Submission created successfully",
-      submission: newSubmission,
-    });
-  } catch (error) {
-    // Send an error response if something goes wrong
-    console.error("Failed to create submission:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create submission",
-      error: error.message,
-    });
-  }
+    try {
+      // Create the submission document
+      const newSubmission = new Submission({
+        student_id,
+        class_name,
+        class_code,
+        course_name,
+        assignment_id,
+        submission_date,
+        grade,
+        comment,
+        submission_file, // Store the file path
+      });
+
+      // Save the submission document to the database
+      await newSubmission.save();
+
+      // Send a success response
+      res.status(201).json({
+        success: true,
+        message: "Submission created successfully",
+        submission: newSubmission,
+      });
+    } catch (error) {
+      // Send an error response if something goes wrong
+      console.error("Failed to create submission:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to create submission",
+        error: error.message,
+      });
+    }
+  });
 };
 
 module.exports = {
