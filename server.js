@@ -2,31 +2,27 @@ const express = require("express");
 require("dotenv").config();
 const connectDB = require("./config/db");
 
-const userR = require("./routes/user-routes");
-const productR = require("./routes/product-router");
-const categoryR = require("./routes/category-router");
-const orderR = require("./routes/order-routes");
-
+const userR = require("./routes/admin-routes");
+const productR = require("./routes/coordinator-router");
+const studentR = require("./routes/student-router");
+const orderR = require("./routes/manager-routes");
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    return res.status(200).json({ message: 'Working' });
-})
+  return res.status(200).json({ message: "Working" });
+});
 
-app.use("/api/user", userR);
-app.use("/api/product", productR);
-app.use("/api/category", categoryR);
-app.use("/api/order", orderR);
-
-
+app.use("/api/admin", userR);
+app.use("/api/admin/classes", orderR);
+app.use("/api/coordinator", productR);
+app.use("/api/student", studentR);
 
 // Connect DataBase
 connectDB();
 
 app.listen(process.env.PORT, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
-
