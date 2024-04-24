@@ -3,7 +3,7 @@ const multer = require("multer");
 const path = require("path");
 
 const storage = multer.diskStorage({
-  destination: "./uploads/", // Set the destination folder for uploaded files
+  destination: "./public/uploads/", // Set the destination folder for uploaded files
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname); // Set the filename
   },
@@ -18,13 +18,11 @@ const createSubmission = async (req, res) => {
   uploadSubmission(req, res, async (err) => {
     if (err) {
       console.error("Error uploading submission file:", err);
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to upload submission file",
-          error: err.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload submission file",
+        error: err.message,
+      });
     }
 
     // Extract submission details from the request body
