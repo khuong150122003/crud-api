@@ -10,6 +10,7 @@ const submissionSchema = new Schema({
   submission_date: { type: Date, required: true },
   grade: { type: String },
   comment: { type: String },
+  submission_file: { type: String }, // New field to store file path
 });
 
 module.exports = mongoose.model("Submission", submissionSchema);
