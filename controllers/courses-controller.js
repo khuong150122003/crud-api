@@ -27,23 +27,19 @@ const createCourse = async (req, res) => {
     // Add students to the students array of the course
 
     // Send a success response
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Course created successfully",
-        course: newCourse,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      course: newCourse,
+    });
   } catch (error) {
     // Send an error response if something goes wrong
     console.error("Failed to create course:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to create course",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+      error: error.message,
+    });
   }
 };
 
