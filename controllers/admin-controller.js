@@ -21,7 +21,7 @@ const getAllUser = async (req, res, nxt) => {
 };
 
 const registerValiations = [
-  body("name").not().isEmpty().trim().withMessage("Name is required"),
+  body("username").not().isEmpty().trim().withMessage("Name is required"),
   body("firstName").not().isEmpty().trim().withMessage("firstName is required"),
   body("lastName").not().isEmpty().trim().withMessage("lastName is required"),
   body("email").not().isEmpty().trim().withMessage("Email is required"),
@@ -32,7 +32,7 @@ const registerValiations = [
 
 // router.post("/signup", userC.signup);
 const signup = async (req, res, nxt) => {
-  const { name, firstName, lastName, email, password, role } = req.body;
+  const { username, firstName, lastName, email, password, role } = req.body;
 
   const errors = validationResult(req);
 
@@ -58,7 +58,7 @@ const signup = async (req, res, nxt) => {
     console.log(err);
   }
   const newUser = new User({
-    name,
+    username,
     firstName,
     lastName,
     email,
@@ -147,7 +147,7 @@ const updateUser = async (req, res) => {
 
     try {
       let updatedUserData = {
-        name: req.body.name,
+        username: req.body.name,
         email: req.body.email,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -188,14 +188,38 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getAllClasses = async (req, res) => {
+  try {
+    // Retrieve all classes from the database
+    const classes = await Class.find();
+
+    // Send a success response with the classes
+    res.status(200).json({
+      success: true,
+      message: "Classes retrieved successfully",
+      classes: classes,
+    });
+  } catch (err) {
+    // Send an error response if something goes wrong
+    console.error("Failed to retrieve classes:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve classes",
+      error: err.message,
+    });
+  }
+};
+
 const createClass = async (req, res) => {
-  const { className, codeClass } = req.body;
+  const { name, code, student_id, coordinator_id } = req.body;
 
   try {
     // Create a new class document
     const newClass = new Class({
-      className,
-      codeClass,
+      name,
+      code,
+      // student_id,
+      // coordinator_id,
     });
 
     // Save the new class document to the database
@@ -206,18 +230,15 @@ const createClass = async (req, res) => {
       success: true,
       message: "Class created successfully",
       class: newClass,
-      codeClass: codeClass,
+      code: code, // Corrected codeClass to code
     });
-  } catch (error) {
-    // Send an error response if something goes wrong
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create class",
-      error: error.message,
-    });
+  } catch (err) {
+    console.error("Error creating class:", err);
+    res.status(500).json({ message: err });
   }
 };
 
+// Assign Student to Class
 const assignStudentToClass = async (req, res) => {
   const { classId, studentId } = req.body;
 
@@ -248,40 +269,93 @@ const assignStudentToClass = async (req, res) => {
     });
   }
 };
+const getAllCourses = async (req, res) => {
+  try {
+    // Retrieve all courses from the database
+    const courses = await Course.find()
+      .populate("documents")
+      .populate("assignments");
 
+    // Format the courses data to include documents and assignments as specified
+    const formattedCourses = courses.map((course) => ({
+      name: course.name,
+      class_name: course.class_name,
+      start_date: course.start_date.toISOString().split("T")[0],
+      end_date: course.end_date.toISOString().split("T")[0],
+      documents: course.documents.map((document) => ({
+        filename: document.filename,
+        documenturl: document.documenturl,
+        uploadDate: document.uploadDate.toISOString().split("T")[0],
+      })),
+      assignments: course.assignments.map((assignment) => ({
+        title: assignment.title,
+        description: assignment.description,
+        due_date: assignment.due_date.toISOString().split("T")[0],
+      })),
+    }));
+
+    // Send a success response with the formatted courses
+    res.status(200).json({
+      success: true,
+      message: "Courses retrieved successfully",
+      courses: formattedCourses,
+    });
+  } catch (err) {
+    // Send an error response if something goes wrong
+    console.error("Failed to retrieve courses:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve courses",
+      error: err.message,
+    });
+  }
+};
+
+// Create Course
 const createCourse = async (req, res) => {
-  const { name, class_name, start_date, end_date } = req.body;
+  // Extract course details, documents, and assignments from the request body
+  const {
+    name,
+    class_name,
+    class_code,
+    start_date,
+    end_date,
+    documents,
+    assignments,
+  } = req.body;
 
   try {
+    // Create the course document
     const newCourse = new Course({
       name,
-      email,
       class_name,
+      class_code,
       start_date,
       end_date,
-      documents: [],
+      documents: [], // Initialize with empty arrays for documents and assignments
       assignments: [],
     });
 
-    // Save the course
+    // Save the course document to the database
     await newCourse.save();
 
-    // Add the course to the class
-    await Class.findByIdAndUpdate(class_name, {
-      $push: { courses: newCourse._id },
-    });
+    // Enroll students in the course (pseudo code)
+    // Fetch students from the class associated with the course
+    // Add students to the students array of the course
 
+    // Send a success response
     res.status(201).json({
       success: true,
       message: "Course created successfully",
       course: newCourse,
     });
-  } catch (err) {
-    console.error("Error creating course:", err);
+  } catch (error) {
+    // Send an error response if something goes wrong
+    console.error("Failed to create course:", error);
     res.status(500).json({
       success: false,
       message: "Failed to create course",
-      error: err.message,
+      error: error.message,
     });
   }
 };
@@ -318,8 +392,11 @@ const createSubmission = async (req, res) => {
       class_name,
       class_code,
       course_name,
+      status,
       assignment_id,
       submission_date,
+      title,
+      description,
       grade,
       comment,
     } = req.body;
@@ -334,8 +411,11 @@ const createSubmission = async (req, res) => {
         class_name,
         class_code,
         course_name,
+        status,
         assignment_id,
         submission_date,
+        title,
+        description,
         grade,
         comment,
         submission_file, // Store the file path
@@ -370,6 +450,8 @@ module.exports = {
   deleteUser,
   createClass,
   assignStudentToClass,
+  getAllClasses,
+  getAllCourses,
   createCourse,
   uploadDocument,
   createAssignment,
