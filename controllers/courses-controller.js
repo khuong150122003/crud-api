@@ -2,6 +2,28 @@ const Course = require("../models/Courses.js");
 const Class = require("../models/Classes.js");
 const User = require("../models/Admin.js");
 
+const getAllCourses = async (req, res) => {
+  try {
+    // Retrieve all courses from the database
+    const courses = await Course.find();
+
+    // Send a success response with the courses
+    res.status(200).json({
+      success: true,
+      message: "Courses retrieved successfully",
+      courses: courses,
+    });
+  } catch (err) {
+    // Send an error response if something goes wrong
+    console.error("Failed to retrieve courses:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve courses",
+      error: err.message,
+    });
+  }
+};
+
 // Create Course
 const createCourse = async (req, res) => {
   // Extract course details, documents, and assignments from the request body
@@ -57,4 +79,5 @@ module.exports = {
   createCourse,
   uploadDocument,
   createAssignment,
+  getAllCourses,
 };
