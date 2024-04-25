@@ -1,5 +1,28 @@
 const Class = require("../models/Classes");
 const User = require("../models/Admin.js");
+
+const getAllClasses = async (req, res) => {
+  try {
+    // Retrieve all classes from the database
+    const classes = await Class.find();
+
+    // Send a success response with the classes
+    res.status(200).json({
+      success: true,
+      message: "Classes retrieved successfully",
+      classes: classes,
+    });
+  } catch (err) {
+    // Send an error response if something goes wrong
+    console.error("Failed to retrieve classes:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve classes",
+      error: err.message,
+    });
+  }
+};
+
 const createClass = async (req, res) => {
   const { className, codeClass } = req.body;
 
@@ -59,5 +82,6 @@ const assignStudentToClass = async (req, res) => {
 
 module.exports = {
   createClass,
+  getAllClasses,
   assignStudentToClass,
 };
