@@ -36,5 +36,7 @@ router.post("/courses", Course.createCourse);
 
 //Submissions
 router.post("/submissions", Submission.createSubmission);
+router.get("/submissions/", Submission.getSubmissions);
+
 
 module.exports = router;
