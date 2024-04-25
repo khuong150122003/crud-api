@@ -1,7 +1,7 @@
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 
-// Connect to DB
+// Connect to DB server
 const db = (process.env.MONGO_URL =
   "mongodb+srv://khuongtngcs210060:khuong1501@project1640.es8thni.mongodb.net/crud");
 
