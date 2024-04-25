@@ -2,6 +2,36 @@ const Submission = require("../models/Submissions.js");
 const multer = require("multer");
 const path = require("path");
 
+const getSubmissions = async (req, res) => {
+  try {
+    // Find all submissions
+    const submissions = await Submission.find();
+
+    // Check if submissions were found
+    if (submissions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No submissions found",
+      });
+    }
+
+    // Send the submissions in the response
+    res.status(200).json({
+      success: true,
+      message: "Submissions retrieved successfully",
+      submissions: submissions,
+    });
+  } catch (error) {
+    // Handle errors
+    console.error("Failed to get submissions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get submissions",
+      error: error.message,
+    });
+  }
+};
+
 const storage = multer.diskStorage({
   destination: "./public/uploads/", // Set the destination folder for uploaded files
   filename: function (req, file, cb) {
@@ -75,4 +105,4 @@ const createSubmission = async (req, res) => {
   });
 };
 
-module.exports = { createSubmission };
+module.exports = { createSubmission, getSubmissions };
