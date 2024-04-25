@@ -26,6 +26,7 @@ router.delete("/:id", userC.deleteUser);
 
 // Create Class
 router.post("/classes", Class.createClass);
+router.get("/classes", Class.getAllClasses);
 
 // Assign Student to Class
 // router.post("/classes/assign", Class.assignStudentToClass);
@@ -33,10 +34,10 @@ router.post("/classes/:classId/students", Class.assignStudentToClass);
 
 // Create Course
 router.post("/courses", Course.createCourse);
+router.get("/courses", Course.getAllCourses);
 
 //Submissions
 router.post("/submissions", Submission.createSubmission);
 router.get("/submissions/", Submission.getSubmissions);
-
 
 module.exports = router;
