@@ -5,13 +5,33 @@ const User = require("../models/Admin.js");
 const getAllCourses = async (req, res) => {
   try {
     // Retrieve all courses from the database
-    const courses = await Course.find();
+    const courses = await Course.find()
+      .populate("documents")
+      .populate("assignments");
 
-    // Send a success response with the courses
+    // Format the courses data to include documents and assignments as specified
+    const formattedCourses = courses.map((course) => ({
+      name: course.name,
+      class_name: course.class_name,
+      start_date: course.start_date.toISOString().split("T")[0],
+      end_date: course.end_date.toISOString().split("T")[0],
+      documents: course.documents.map((document) => ({
+        filename: document.filename,
+        documenturl: document.documenturl,
+        uploadDate: document.uploadDate.toISOString().split("T")[0],
+      })),
+      assignments: course.assignments.map((assignment) => ({
+        title: assignment.title,
+        description: assignment.description,
+        due_date: assignment.due_date.toISOString().split("T")[0],
+      })),
+    }));
+
+    // Send a success response with the formatted courses
     res.status(200).json({
       success: true,
       message: "Courses retrieved successfully",
-      courses: courses,
+      courses: formattedCourses,
     });
   } catch (err) {
     // Send an error response if something goes wrong
@@ -27,14 +47,22 @@ const getAllCourses = async (req, res) => {
 // Create Course
 const createCourse = async (req, res) => {
   // Extract course details, documents, and assignments from the request body
-  const { name, class_name, start_date, end_date, documents, assignments } =
-    req.body;
+  const {
+    name,
+    class_name,
+    class_code,
+    start_date,
+    end_date,
+    documents,
+    assignments,
+  } = req.body;
 
   try {
     // Create the course document
     const newCourse = new Course({
       name,
       class_name,
+      class_code,
       start_date,
       end_date,
       documents: [], // Initialize with empty arrays for documents and assignments
