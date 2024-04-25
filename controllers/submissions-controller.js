@@ -61,8 +61,11 @@ const createSubmission = async (req, res) => {
       class_name,
       class_code,
       course_name,
+      status,
       assignment_id,
       submission_date,
+      title,
+      description,
       grade,
       comment,
     } = req.body;
@@ -77,8 +80,11 @@ const createSubmission = async (req, res) => {
         class_name,
         class_code,
         course_name,
+        status,
         assignment_id,
         submission_date,
+        title,
+        description,
         grade,
         comment,
         submission_file, // Store the file path
