@@ -24,13 +24,15 @@ const getAllClasses = async (req, res) => {
 };
 
 const createClass = async (req, res) => {
-  const { className, codeClass } = req.body;
+  const { name, code, student_id, coordinator_id } = req.body;
 
   try {
     // Create a new class document
     const newClass = new Class({
-      className,
-      codeClass,
+      name,
+      code,
+      // student_id,
+      // coordinator_id,
     });
 
     // Save the new class document to the database
@@ -41,9 +43,10 @@ const createClass = async (req, res) => {
       success: true,
       message: "Class created successfully",
       class: newClass,
-      codeClass: codeClass,
+      code: code,
     });
   } catch (err) {
+    console.error("Error creating class:", err);
     res.status(500).json({ message: err });
   }
 };
